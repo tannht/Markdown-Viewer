@@ -517,9 +517,124 @@ This is a fully client-side application. Your content never leaves your browser 
     };
   }
 
+  function closeTabMenus() {
+    document.querySelectorAll('.tab-menu-btn.open').forEach(function(btn) {
+      btn.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+    });
+    document.querySelectorAll('.tab-menu-dropdown.open').forEach(function(dropdown) {
+      dropdown.classList.remove('open');
+    });
+  }
+
+  function removeTabMenuDropdowns() {
+    document.querySelectorAll('.tab-menu-dropdown[data-tab-menu-dropdown="true"]').forEach(function(dropdown) {
+      dropdown.remove();
+    });
+  }
+
+  function positionTabMenu(menuBtn, dropdown) {
+    const rect = menuBtn.getBoundingClientRect();
+    const margin = 8;
+    const dropdownWidth = dropdown.offsetWidth || 130;
+    const dropdownHeight = dropdown.offsetHeight || 110;
+    let left = rect.right - dropdownWidth;
+    let top = rect.bottom + 4;
+
+    left = Math.max(margin, Math.min(left, window.innerWidth - dropdownWidth - margin));
+    if (top + dropdownHeight > window.innerHeight - margin) {
+      top = Math.max(margin, rect.top - dropdownHeight - 4);
+    }
+
+    dropdown.style.top = top + 'px';
+    dropdown.style.left = left + 'px';
+    dropdown.style.right = 'auto';
+  }
+
+  function runTabMenuAction(tabId, action, isMobileMenu) {
+    if (action === 'rename') {
+      if (isMobileMenu) closeMobileMenu();
+      renameTab(tabId);
+    } else if (action === 'duplicate') {
+      duplicateTab(tabId);
+      if (isMobileMenu) closeMobileMenu();
+    } else if (action === 'delete') {
+      deleteTab(tabId);
+    }
+  }
+
+  function createTabActionMenu(tab, options) {
+    const isMobileMenu = options && options.isMobileMenu;
+    const menuIdPrefix = options && options.menuIdPrefix ? options.menuIdPrefix : 'tab-menu';
+    const menuId = menuIdPrefix + '-' + tab.id;
+
+    const menuBtn = document.createElement('button');
+    menuBtn.type = 'button';
+    menuBtn.className = 'tab-menu-btn';
+    menuBtn.setAttribute('aria-label', 'File options for ' + (tab.title || 'Untitled'));
+    menuBtn.setAttribute('aria-haspopup', 'menu');
+    menuBtn.setAttribute('aria-expanded', 'false');
+    menuBtn.setAttribute('aria-controls', menuId);
+    menuBtn.setAttribute('draggable', 'false');
+    menuBtn.title = 'File options';
+    menuBtn.innerHTML = '&#8943;';
+
+    const dropdown = document.createElement('div');
+    dropdown.id = menuId;
+    dropdown.className = 'tab-menu-dropdown';
+    dropdown.setAttribute('data-tab-menu-dropdown', 'true');
+    dropdown.setAttribute('role', 'menu');
+    dropdown.innerHTML =
+      '<button type="button" class="tab-menu-item" role="menuitem" data-action="rename"><i class="bi bi-pencil"></i> Rename</button>' +
+      '<button type="button" class="tab-menu-item" role="menuitem" data-action="duplicate"><i class="bi bi-files"></i> Duplicate</button>' +
+      '<button type="button" class="tab-menu-item tab-menu-item-danger" role="menuitem" data-action="delete"><i class="bi bi-trash"></i> Delete</button>';
+
+    menuBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const shouldOpen = !menuBtn.classList.contains('open');
+      closeTabMenus();
+      if (shouldOpen) {
+        menuBtn.classList.add('open');
+        menuBtn.setAttribute('aria-expanded', 'true');
+        dropdown.classList.add('open');
+        positionTabMenu(menuBtn, dropdown);
+      }
+    });
+
+    menuBtn.addEventListener('mousedown', function(e) {
+      e.stopPropagation();
+    });
+
+    menuBtn.addEventListener('dragstart', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+
+    dropdown.addEventListener('click', function(e) {
+      e.stopPropagation();
+    });
+
+    dropdown.querySelectorAll('.tab-menu-item').forEach(function(actionBtn) {
+      actionBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const action = actionBtn.getAttribute('data-action');
+        closeTabMenus();
+        runTabMenuAction(tab.id, action, isMobileMenu);
+      });
+    });
+
+    document.body.appendChild(dropdown);
+
+    return { button: menuBtn, dropdown: dropdown };
+  }
+
   function renderTabBar(tabsArr, currentActiveTabId) {
     const tabList = document.getElementById('tab-list');
     if (!tabList) return;
+    closeTabMenus();
+    removeTabMenuDropdowns();
     tabList.innerHTML = '';
     tabsArr.forEach(function(tab) {
       const item = document.createElement('div');
@@ -534,53 +649,10 @@ This is a fully client-side application. Your content never leaves your browser 
       titleSpan.textContent = tab.title || 'Untitled';
       titleSpan.title = tab.title || 'Untitled';
 
-      // Three-dot menu button
-      const menuBtn = document.createElement('button');
-      menuBtn.className = 'tab-menu-btn';
-      menuBtn.setAttribute('aria-label', 'File options');
-      menuBtn.title = 'File options';
-      menuBtn.innerHTML = '&#8943;';
-
-      // Dropdown
-      const dropdown = document.createElement('div');
-      dropdown.className = 'tab-menu-dropdown';
-      dropdown.innerHTML =
-        '<button class="tab-menu-item" data-action="rename"><i class="bi bi-pencil"></i> Rename</button>' +
-        '<button class="tab-menu-item" data-action="duplicate"><i class="bi bi-files"></i> Duplicate</button>' +
-        '<button class="tab-menu-item tab-menu-item-danger" data-action="delete"><i class="bi bi-trash"></i> Delete</button>';
-
-      menuBtn.appendChild(dropdown);
-
-      menuBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        // Close all other open dropdowns first
-        document.querySelectorAll('.tab-menu-btn.open').forEach(function(btn) {
-          if (btn !== menuBtn) btn.classList.remove('open');
-        });
-        menuBtn.classList.toggle('open');
-        // Position the dropdown relative to the viewport so it escapes the
-        // overflow scroll container on .tab-list
-        if (menuBtn.classList.contains('open')) {
-          var rect = menuBtn.getBoundingClientRect();
-          dropdown.style.top = (rect.bottom + 4) + 'px';
-          dropdown.style.right = (window.innerWidth - rect.right) + 'px';
-          dropdown.style.left = 'auto';
-        }
-      });
-
-      dropdown.querySelectorAll('.tab-menu-item').forEach(function(actionBtn) {
-        actionBtn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          menuBtn.classList.remove('open');
-          const action = actionBtn.getAttribute('data-action');
-          if (action === 'rename') renameTab(tab.id);
-          else if (action === 'duplicate') duplicateTab(tab.id);
-          else if (action === 'delete') deleteTab(tab.id);
-        });
-      });
+      const tabMenu = createTabActionMenu(tab, { menuIdPrefix: 'desktop-tab-menu' });
 
       item.appendChild(titleSpan);
-      item.appendChild(menuBtn);
+      item.appendChild(tabMenu.button);
 
       item.addEventListener('click', function() {
         switchTab(tab.id);
@@ -655,56 +727,13 @@ This is a fully client-side application. Your content never leaves your browser 
       titleSpan.textContent = tab.title || 'Untitled';
       titleSpan.title = tab.title || 'Untitled';
 
-      // Three-dot menu button (same as desktop)
-      const menuBtn = document.createElement('button');
-      menuBtn.className = 'tab-menu-btn';
-      menuBtn.setAttribute('aria-label', 'File options');
-      menuBtn.title = 'File options';
-      menuBtn.innerHTML = '&#8943;';
-
-      // Dropdown (same as desktop)
-      const dropdown = document.createElement('div');
-      dropdown.className = 'tab-menu-dropdown';
-      dropdown.innerHTML =
-        '<button class="tab-menu-item" data-action="rename"><i class="bi bi-pencil"></i> Rename</button>' +
-        '<button class="tab-menu-item" data-action="duplicate"><i class="bi bi-files"></i> Duplicate</button>' +
-        '<button class="tab-menu-item tab-menu-item-danger" data-action="delete"><i class="bi bi-trash"></i> Delete</button>';
-
-      menuBtn.appendChild(dropdown);
-
-      menuBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        document.querySelectorAll('.tab-menu-btn.open').forEach(function(btn) {
-          if (btn !== menuBtn) btn.classList.remove('open');
-        });
-        menuBtn.classList.toggle('open');
-        if (menuBtn.classList.contains('open')) {
-          const rect = menuBtn.getBoundingClientRect();
-          dropdown.style.top = (rect.bottom + 4) + 'px';
-          dropdown.style.right = (window.innerWidth - rect.right) + 'px';
-          dropdown.style.left = 'auto';
-        }
-      });
-
-      dropdown.querySelectorAll('.tab-menu-item').forEach(function(actionBtn) {
-        actionBtn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          menuBtn.classList.remove('open');
-          const action = actionBtn.getAttribute('data-action');
-          if (action === 'rename') {
-            closeMobileMenu();
-            renameTab(tab.id);
-          } else if (action === 'duplicate') {
-            duplicateTab(tab.id);
-            closeMobileMenu();
-          } else if (action === 'delete') {
-            deleteTab(tab.id);
-          }
-        });
+      const tabMenu = createTabActionMenu(tab, {
+        isMobileMenu: true,
+        menuIdPrefix: 'mobile-tab-menu'
       });
 
       item.appendChild(titleSpan);
-      item.appendChild(menuBtn);
+      item.appendChild(tabMenu.button);
 
       item.addEventListener('click', function() {
         switchTab(tab.id);
@@ -717,9 +746,7 @@ This is a fully client-side application. Your content never leaves your browser 
 
   // Close any open tab dropdown when clicking elsewhere in the document
   document.addEventListener('click', function() {
-    document.querySelectorAll('.tab-menu-btn.open').forEach(function(btn) {
-      btn.classList.remove('open');
-    });
+    closeTabMenus();
   });
 
   function saveCurrentTabState() {
@@ -850,12 +877,18 @@ This is a fully client-side application. Your content never leaves your browser 
       alert('Maximum of 20 tabs reached. Please close an existing tab to open a new one.');
       return;
     }
+    const shouldSwitchToDuplicate = tabId === activeTabId;
     saveCurrentTabState();
     const dupTitle = tab.title + ' (copy)';
     const dup = createTab(tab.content, dupTitle, tab.viewMode);
     const idx = tabs.findIndex(function(t) { return t.id === tabId; });
     tabs.splice(idx + 1, 0, dup);
-    switchTab(dup.id);
+    if (shouldSwitchToDuplicate) {
+      switchTab(dup.id);
+    } else {
+      saveTabsToStorage(tabs);
+      renderTabBar(tabs, activeTabId);
+    }
   }
 
   function resetAllTabs() {
@@ -2862,6 +2895,7 @@ This is a fully client-side application. Your content never leaves your browser 
     }
     // Close Mermaid zoom modal with Escape
     if (e.key === "Escape") {
+      closeTabMenus();
       closeMermaidModal();
     }
   });

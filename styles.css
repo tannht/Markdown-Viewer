@@ -1598,7 +1598,7 @@ a:focus {
   flex-direction: column;
 }
 
-.tab-menu-btn.open .tab-menu-dropdown {
+.tab-menu-dropdown.open {
   display: flex;
 }
 
