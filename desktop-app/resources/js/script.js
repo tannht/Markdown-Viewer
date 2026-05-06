@@ -960,14 +960,15 @@ This is a fully client-side application. Your content never leaves your browser 
     try {
       const { frontmatter, body } = parseFrontmatter(markdownEditor.value);
       const tableHtml = frontmatter ? renderFrontmatterTable(frontmatter) : '';
-      const usedReferenceNumbers = getUsedReferenceNumbers(body);
-      const html = tableHtml + marked.parse(body);
+      const referenceData = extractReferenceDefinitions(body);
+      const html = tableHtml + marked.parse(referenceData.cleanedMarkdown);
       const sanitizedHtml = DOMPurify.sanitize(html, {
         ADD_TAGS: ['mjx-container'],
-        ADD_ATTR: ['id', 'class', 'style']
+        ADD_ATTR: ['id', 'class', 'style'],
+        ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|blob):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i
       });
       markdownPreview.innerHTML = sanitizedHtml;
-      applyReferencePreviewLinks(markdownPreview, usedReferenceNumbers);
+      applyReferencePreviewLinks(markdownPreview, referenceData.definitions);
       enhanceGitHubAlerts(markdownPreview);
 
       processEmojis(markdownPreview);
@@ -1867,6 +1868,25 @@ This is a fully client-side application. Your content never leaves your browser 
     return used;
   }
 
+  function extractReferenceDefinitions(markdown) {
+    const definitions = new Map();
+    const definitionRegex = /^\[(\d+)\]:\s*(\S+)(?:\s+(?:"([^"]*)"|'([^']*)'|\(([^)]+)\)))?\s*$/gm;
+    const cleanedMarkdown = markdown.replace(
+      definitionRegex,
+      function(match, numberText, rawUrl, titleDouble, titleSingle, titleParen) {
+        const number = parseInt(numberText, 10);
+        if (Number.isNaN(number)) return '';
+        const url = rawUrl ? rawUrl.replace(/^<|>$/g, '') : '';
+        const title = titleDouble || titleSingle || titleParen || '';
+        if (url) {
+          definitions.set(number, { url: url, title: title });
+        }
+        return '';
+      }
+    );
+    return { definitions, cleanedMarkdown };
+  }
+
   function getNextAvailableReferenceNumber(used, startNumber) {
     let next = Math.max(1, startNumber || 1);
     while (used.has(next)) next += 1;
@@ -1879,8 +1899,23 @@ This is a fully client-side application. Your content never leaves your browser 
       .replace(/"/g, '\\"');
   }
 
-  function applyReferencePreviewLinks(container, usedNumbers) {
-    if (!container || !usedNumbers || usedNumbers.size === 0) return;
+  function applyReferencePreviewLinks(container, referenceDefinitions) {
+    if (!container || !referenceDefinitions || referenceDefinitions.size === 0) return;
+
+    function applyReferenceStyle(link, number) {
+      const definition = referenceDefinitions.get(number);
+      if (definition && definition.url) {
+        link.setAttribute('href', definition.url);
+        if (definition.title) {
+          link.setAttribute('title', definition.title);
+        } else {
+          link.removeAttribute('title');
+        }
+      }
+      link.textContent = '[' + number + ']';
+      link.classList.add('reference-link');
+    }
+
     const links = container.querySelectorAll('a');
     links.forEach(function(link) {
       const text = link.textContent.trim();
@@ -1891,10 +1926,54 @@ This is a fully client-side application. Your content never leaves your browser 
         const match = text.match(/^\[(\d+)\]$/);
         if (match) number = parseInt(match[1], 10);
       }
-      if (number && usedNumbers.has(number)) {
-        link.textContent = '[' + number + ']';
-        link.classList.add('reference-link');
+      if (number && referenceDefinitions.has(number)) {
+        applyReferenceStyle(link, number);
       }
+    });
+
+    const numberTokens = Array.from(referenceDefinitions.keys())
+      .map(String)
+      .sort(function(a, b) { return b.length - a.length; });
+    if (numberTokens.length === 0) return;
+    const referenceRegex = new RegExp('\\[(?:' + numberTokens.join('|') + ')\\]', 'g');
+    const nodesToProcess = [];
+    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      const parent = node.parentElement;
+      if (!parent || !node.nodeValue) continue;
+      if (parent.closest('a, code, pre, script, style, mjx-container')) continue;
+      referenceRegex.lastIndex = 0;
+      if (referenceRegex.test(node.nodeValue)) {
+        nodesToProcess.push(node);
+      }
+    }
+    nodesToProcess.forEach(function(node) {
+      const text = node.nodeValue;
+      referenceRegex.lastIndex = 0;
+      let match;
+      let lastIndex = 0;
+      const fragment = document.createDocumentFragment();
+      while ((match = referenceRegex.exec(text)) !== null) {
+        const before = text.slice(lastIndex, match.index);
+        if (before) fragment.appendChild(document.createTextNode(before));
+        const number = parseInt(match[0].slice(1, -1), 10);
+        const definition = referenceDefinitions.get(number);
+        if (definition && definition.url) {
+          const link = document.createElement('a');
+          link.href = definition.url;
+          if (definition.title) link.title = definition.title;
+          link.textContent = '[' + number + ']';
+          link.classList.add('reference-link');
+          fragment.appendChild(link);
+        } else {
+          fragment.appendChild(document.createTextNode(match[0]));
+        }
+        lastIndex = match.index + match[0].length;
+      }
+      const after = text.slice(lastIndex);
+      if (after) fragment.appendChild(document.createTextNode(after));
+      node.parentNode.replaceChild(fragment, node);
     });
   }
 
