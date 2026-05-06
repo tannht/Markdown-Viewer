@@ -1870,6 +1870,7 @@ This is a fully client-side application. Your content never leaves your browser 
 
   function extractReferenceDefinitions(markdown) {
     const definitions = new Map();
+    // Matches reference definitions: [1]: <url> "title", [1]: url 'title', or [1]: url (title)
     const definitionRegex = /^\[(\d+)\]:\s*(?:<([^>\s]+)>|(\S+))(?:\s+(?:"([^"]*)"|'([^']*)'|\(([^)]+)\)))?\s*$/gm;
     const cleanedMarkdown = markdown.replace(
       definitionRegex,
