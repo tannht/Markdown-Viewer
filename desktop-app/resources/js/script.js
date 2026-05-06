@@ -1899,18 +1899,30 @@ This is a fully client-side application. Your content never leaves your browser 
       .replace(/"/g, '\\"');
   }
 
+  function isSafeReferenceUrl(url) {
+    if (!url) return false;
+    try {
+      const parsed = new URL(url, window.location.href);
+      return ['http:', 'https:', 'mailto:', 'tel:', 'blob:'].includes(parsed.protocol);
+    } catch (e) {
+      return false;
+    }
+  }
+
   function applyReferencePreviewLinks(container, referenceDefinitions) {
     if (!container || !referenceDefinitions || referenceDefinitions.size === 0) return;
 
     function applyReferenceStyle(link, number) {
       const definition = referenceDefinitions.get(number);
-      if (definition && definition.url) {
+      if (definition && definition.url && isSafeReferenceUrl(definition.url)) {
         link.setAttribute('href', definition.url);
         if (definition.title) {
           link.setAttribute('title', definition.title);
         } else {
           link.removeAttribute('title');
         }
+      } else {
+        link.removeAttribute('href');
       }
       link.textContent = '[' + number + ']';
       link.classList.add('reference-link');
@@ -1955,7 +1967,7 @@ This is a fully client-side application. Your content never leaves your browser 
         if (before) fragment.appendChild(document.createTextNode(before));
         const number = parseInt(match[1], 10);
         const definition = referenceDefinitions.get(number);
-        if (definition && definition.url) {
+        if (definition && definition.url && isSafeReferenceUrl(definition.url)) {
           const link = document.createElement('a');
           link.href = definition.url;
           if (definition.title) link.title = definition.title;
