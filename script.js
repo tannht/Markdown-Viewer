@@ -238,6 +238,9 @@ document.addEventListener("DOMContentLoaded", function () {
     headerIds: true,
     mangle: false,
   };
+  const LINE_NUMBER_GUTTER_MIN_CH = 3;
+  const LINE_NUMBER_GUTTER_PADDING_CH = 1;
+  const LINE_NUMBER_EMPTY_PLACEHOLDER = '\u200b';
   let lineNumberMeasure = null;
   let lineNumberUpdateFrame = null;
 
@@ -3049,7 +3052,7 @@ This is a fully client-side application. Your content never leaves your browser 
   function updateLineNumberGutter(lineCount) {
     if (!editorPaneElement) return;
     const digits = String(Math.max(1, lineCount)).length;
-    const gutterSize = `${Math.max(3, digits + 1)}ch`;
+    const gutterSize = `${Math.max(LINE_NUMBER_GUTTER_MIN_CH, digits + LINE_NUMBER_GUTTER_PADDING_CH)}ch`;
     editorPaneElement.style.setProperty('--line-number-gutter', gutterSize);
   }
 
@@ -3085,7 +3088,7 @@ This is a fully client-side application. Your content never leaves your browser 
 
   function getWrappedLineCount(line, metrics) {
     if (!lineNumberMeasure) return 1;
-    lineNumberMeasure.textContent = line.length ? line : '\u200b';
+    lineNumberMeasure.textContent = line.length ? line : LINE_NUMBER_EMPTY_PLACEHOLDER;
     const contentHeight = lineNumberMeasure.scrollHeight - metrics.paddingTop - metrics.paddingBottom;
     return Math.max(1, Math.round(contentHeight / metrics.lineHeight));
   }
