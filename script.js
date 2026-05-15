@@ -397,7 +397,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const noteNumber = footnoteOrder.indexOf(id) + 1;
       const safeRefId = escapeHtmlAttribute(refId);
       const safeNormalizedId = escapeHtmlAttribute(normalizedId);
-      return `<sup id="${safeRefId}" class="footnote-ref"><a href="#fn-${safeNormalizedId}" aria-label="Footnote ${noteNumber}">${noteNumber}</a></sup>`;
+      return `<sup id="${safeRefId}" class="footnote-ref"><a href="#fn-${safeNormalizedId}" aria-label="Footnote ${noteNumber}">[${noteNumber}]</a></sup>`;
     });
 
     const footnotesHtml = footnoteOrder
