@@ -280,17 +280,21 @@ document.addEventListener("DOMContentLoaded", function () {
     level: 'block',
     start(src) {
       const match = src.match(BLOCK_MATH_MARKER_PATTERN);
-      return match ? match.index : undefined;
+      if (!match) {
+        return undefined;
+      }
+      return match.index;
     },
     tokenizer(src) {
       const match = BLOCK_MATH_PATTERN.exec(src);
-      if (match) {
-        return {
-          type: 'blockMath',
-          raw: match[0],
-          text: match[1],
-        };
+      if (!match) {
+        return undefined;
       }
+      return {
+        type: 'blockMath',
+        raw: match[0],
+        text: match[1],
+      };
     },
     renderer(token) {
       return `<div class="math-block">$$\n${token.text}\n$$</div>\n`;
