@@ -301,12 +301,27 @@ document.addEventListener("DOMContentLoaded", function () {
       .replace(/^-+|-+$/g, "") || "footnote";
   }
 
+  function escapeHtmlAttribute(value) {
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
   function renderDefinitionContent(content) {
     return content
       .split(/\n{2,}/)
       .map((paragraph) => paragraph.trim())
       .filter(Boolean)
-      .map((paragraph) => `<p>${marked.parseInline(paragraph)}</p>`)
+      .map((paragraph) => {
+        const renderedParagraph = marked.parseInline(paragraph);
+        const safeParagraph = typeof DOMPurify !== "undefined"
+          ? DOMPurify.sanitize(renderedParagraph)
+          : renderedParagraph;
+        return `<p>${safeParagraph}</p>`;
+      })
       .join("");
   }
 
@@ -372,7 +387,9 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       const noteNumber = footnoteOrder.indexOf(id) + 1;
-      return `<sup id="${refId}" class="footnote-ref"><a href="#fn-${normalizedId}" aria-label="Footnote ${noteNumber}">${noteNumber}</a></sup>`;
+      const safeRefId = escapeHtmlAttribute(refId);
+      const safeNormalizedId = escapeHtmlAttribute(normalizedId);
+      return `<sup id="${safeRefId}" class="footnote-ref"><a href="#fn-${safeNormalizedId}" aria-label="Footnote ${noteNumber}">${noteNumber}</a></sup>`;
     });
 
     const footnotesHtml = footnoteOrder
@@ -381,7 +398,9 @@ document.addEventListener("DOMContentLoaded", function () {
         const normalizedId = normalizeFootnoteId(id);
         const noteHtml = renderDefinitionContent(footnoteDefinitions.get(id) || "");
         const backRefId = footnoteFirstRefId.get(id) || `fnref-${normalizedId}`;
-        return `<li id="fn-${normalizedId}">${noteHtml}<a href="#${backRefId}" class="footnote-backref" aria-label="Back to content">↩</a></li>`;
+        const safeNormalizedId = escapeHtmlAttribute(normalizedId);
+        const safeBackRefId = escapeHtmlAttribute(backRefId);
+        return `<li id="fn-${safeNormalizedId}">${noteHtml}<a href="#${safeBackRefId}" class="footnote-backref" aria-label="Back to content">↩</a></li>`;
       })
       .join("");
 
