@@ -192,6 +192,21 @@ body {
   vertical-align: -0.1em;
 }
 
+.markdown-body ul.contains-task-list,
+.markdown-body li.task-list-item {
+  list-style: none;
+}
+
+.markdown-body ul.contains-task-list {
+  padding-left: 0;
+}
+
+.markdown-body li.task-list-item input[type="checkbox"] {
+  margin: 0 0.5em 0.2em 0;
+  vertical-align: middle;
+  pointer-events: none;
+}
+
 .markdown-body .markdown-alert {
   padding: 0.5rem 1rem;
   margin-bottom: 16px;
