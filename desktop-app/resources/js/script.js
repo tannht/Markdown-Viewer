@@ -321,7 +321,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function renderDefinitionContent(content, options = {}) {
     const { appendHtml = "" } = options;
     const paragraphs = String(content || "")
-      .split(/\n[ \t]*\n/)
+      .split(/\n(?:[ \t]*\n)+/)
       .map((paragraph) => paragraph.trim())
       .filter(Boolean);
 
