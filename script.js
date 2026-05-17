@@ -369,7 +369,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         const lineAfterBase = line.slice(baseIndent.length);
-        const indentedMatch = /^(?: {4}|\t)(.*)$/.exec(lineAfterBase);
+        const indentedMatch = /^(?: {2,}|\t)(.*)$/.exec(lineAfterBase);
         if (indentedMatch) {
           definitionLines.push(indentedMatch[1]);
           index += 1;
@@ -381,7 +381,7 @@ document.addEventListener("DOMContentLoaded", function () {
           const nextAfterBase = nextLine.startsWith(baseIndent)
             ? nextLine.slice(baseIndent.length)
             : "";
-          if (/^(?: {4}|\t)/.test(nextAfterBase)) {
+          if (/^(?: {2,}|\t)/.test(nextAfterBase)) {
             definitionLines.push("");
             index += 1;
             continue;
