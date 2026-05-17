@@ -320,17 +320,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function renderDefinitionContent(content, options = {}) {
     const { appendHtml = "" } = options;
-    const appendMarkup = appendHtml ? ` ${appendHtml}` : "";
     const paragraphs = String(content || "")
       .split(/\n\s*\n/)
       .map((paragraph) => paragraph.trim())
       .filter(Boolean);
 
-    if (appendMarkup) {
+    if (appendHtml) {
       if (paragraphs.length === 0) {
         paragraphs.push(appendHtml);
       } else {
-        paragraphs[paragraphs.length - 1] = `${paragraphs[paragraphs.length - 1]}${appendMarkup}`;
+        paragraphs[paragraphs.length - 1] = `${paragraphs[paragraphs.length - 1]} ${appendHtml}`;
       }
     }
 
