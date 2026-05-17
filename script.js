@@ -321,7 +321,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function renderDefinitionContent(content, options = {}) {
     const { appendHtml = "" } = options;
     const paragraphs = String(content || "")
-      .split(/\n\s*\n/)
+      .split(/\n[ \t]*\n/)
       .map((paragraph) => paragraph.trim())
       .filter(Boolean);
 
@@ -391,7 +391,7 @@ document.addEventListener("DOMContentLoaded", function () {
         break;
       }
 
-      footnoteDefinitions.set(id, definitionLines.join("\n").trimEnd());
+      footnoteDefinitions.set(id, definitionLines.join("\n").trim());
     }
 
     return preservedLines.join("\n");
