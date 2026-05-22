@@ -5,6 +5,14 @@ Non-code commits (documentation, planning, README-only updates) are excluded.
 
 ---
 
+## v3.5.5
+
+- **Description:** Overhauled footnote rendering to support multi-paragraph footnotes displayed inline, restored correct nested list indentation, and fixed footnote backref spacing and paragraph-splitting patterns. Broadened footnote continuation indentation handling and hardened inline parsing for content without footnotes. Also added MathJax loader configuration to support additional LaTeX packages, ensuring extended math notation renders correctly in both web and desktop modes.
+- **Date:** 2026-05-22
+- **URL:** https://github.com/ThisIs-Developer/Markdown-Viewer/commit/bc988ca48b118b8e05e76cbe513f79b2d4ae0ac5
+
+---
+
 ## v3.5.4
 
 - **Description:** Preserved multiline `$$...$$` LaTeX blocks during markdown parsing to ensure complex MathJax equations render correctly. Added a custom markdown extension in both web and desktop scripts to tokenize and retain display math as atomic units, preventing unwanted line-breaks inside equations.
