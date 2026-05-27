@@ -1,6 +1,6 @@
 {
   "name": "Markdown Viewer",
-  "short_name": "MD Viewer",
+  "short_name": "Markdown Viewer",
   "description": "A premium client-side GitHub-style Markdown editor and live preview tool.",
   "start_url": "./index.html?utm_source=pwa",
   "display": "standalone",
