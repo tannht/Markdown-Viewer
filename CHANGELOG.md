@@ -5,7 +5,7 @@ Non-code commits (documentation, planning, README-only updates) are excluded.
 
 ## v3.6.4
 
-- **Description:** Implemented Brazilian Portuguese (pt-BR) translation module. Localized all main editor labels, stats, tooltips, dialogs, placeholder, and search/replace options. Registered `hreflang` alternate link for Portuguese (pt-BR) search indexation and enabled automatic browser language detection fallback for Portuguese language preferences. Rotated Service Worker cache namespace to `v3.6.4` to trigger background cache updates.
+- **Description:** Redesigned the Find & Replace panel with AST scoping, regular expression support, and diff preview, allowing structured text replacement with context-sensitive analysis. Remediated multiple editor regressions including global shortcut interception, scroll view centering, floating position resets, and split-pane docking reflow. Optimized the mobile layout by hiding the split-pane dock toggle, removing language selector flags, prepending language text prefixes for improved usability, and fixing help/about modal triggers. Implemented a complete Brazilian Portuguese (pt-BR) translation module localizing all main editor labels, stats, tooltips, dialogs, placeholders, and search/replace options, registered a `hreflang` alternate link for Portuguese search indexation, and enabled automatic browser language detection fallback for Portuguese language preferences. Rotated the Service Worker cache namespace to `markdown-viewer-cache-v3.6.4` to trigger background cache updates.
 - **Date:** 2026-05-27
 - **URL:** https://github.com/ThisIs-Developer/Markdown-Viewer/commit/v3.6.4
 
